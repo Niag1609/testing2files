@@ -1,0 +1,24 @@
+What Is a Codebase?
+
+A codebase is the complete collection of source code, configuration, and related assets that make up a software project. It is usually stored in one folder or repository and version-controlled with tools like Git.
+
+Typical parts of a codebase include:
+
+- Source code: Program files (for example .py, .js, .java) that implement behavior.
+- Configuration: Files such as package.json, pyproject.toml, or Dockerfile that define dependencies, build steps, and runtime settings.
+- Tests: Automated checks that verify the software works as intended.
+- Documentation: README files, comments, and design notes that explain how to use and change the project.
+- Assets: Images, data files, or templates the application needs.
+
+Developers work inside a codebase to add features, fix bugs, and refactor. Tools (editors, linters, CI pipelines) read the same files to build, test, and deploy the application.
+
+This Project (my-first-project)
+
+As of now, this workspace folder is empty. There is no application code, configuration, or tests here yet. When you add files (for example a README, source files, and a dependency manifest), those files together will become this project's codebase.
+
+To start building a codebase here, you might:
+
+1. Choose a language or framework (Node, Python, etc.).
+2. Add a README describing the project's purpose.
+3. Initialize version control (git init) and add your first source files.
+4. Grow the project with features, tests, and documentation over time.

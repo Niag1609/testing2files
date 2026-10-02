@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>★ ANIMAGENT ★ — RETRO ANIMATION DIMENSION ★</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: "VT323", "Comic Sans MS", cursive;
+      color: #0ff;
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ctext y='24' font-size='24'%3E⭐%3C/text%3E%3C/svg%3E") 8 8, crosshair;
+    }
+
+    #starfield {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.12) 0px,
+        rgba(0, 0, 0, 0.12) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      opacity: 0.35;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 99;
+      pointer-events: none;
+      box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.85);
+    }
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at center, #1a0033 0%, #000 70%);
+      transition: opacity 0.8s ease, visibility 0.8s;
+    }
+
+    #splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-wrap {
+      width: min(420px, 90vw);
+      border: 4px ridge #ff00ff;
+      background: linear-gradient(180deg, #111 0%, #220044 100%);
+      padding: 16px;
+      box-shadow: 0 0 40px #ff00ff, inset 0 0 20px rgba(255, 0, 255, 0.3);
+    }
+
+    .loader-title {
+      font-family: "Press Start 2P", monospace;
+      font-size: clamp(10px, 2.5vw, 14px);
+      color: #ffff00;
+      text-align: center;
+      margin-bottom: 12px;
+      animation: blink 0.9s step-end infinite;
+    }
+
+    .loader-bar-outer {
+      height: 22px;
+      border: 2px inset #666;
+      background: #000;
+    }
+
+    .loader-bar-inner {
+      height: 100%;
+      width: 0%;
+      background: repeating-linear-gradient(
+        90deg,
+        #00ff00 0px,
+        #00ff00 8px,
+        #008800 8px,
+        #008800 16px
+      );
+      transition: width 0.05s linear;
+    }
+
+    .loader-text {
+      margin-top: 10px;
+      font-size: 1.25rem;
+      color: #0ff;
+      text-align: center;
+    }
+
+    #enter-btn {
+      margin-top: 24px;
+      font-family: "Press Start 2P", monospace;
+      font-size: clamp(11px, 2.8vw, 16px);
+      padding: 14px 28px;
+      border: 4px outset #ccc;
+      background: linear-gradient(180deg, #ff6600, #cc0000);
+      color: #fff;
+      text-shadow: 2px 2px #000;
+      animation: pulse-btn 1.2s ease-in-out infinite;
+      cursor: pointer;
+    }
+
+    #enter-btn:hover { filter: brightness(1.2); }
+    #enter-btn:active { border-style: inset; }
+
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes pulse-btn {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 20px #ff3300; }
+      50% { transform: scale(1.05); box-shadow: 0 0 40px #ff9900; }
+    }
+
+    .stage {
+      position: relative;
+      z-index: 10;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      padding: 8px 12px 0;
+      max-width: 100%;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 8px;
+      background: linear-gradient(90deg, #000080, #400080, #000080);
+      border: 3px ridge #8888ff;
+      font-size: 1.1rem;
+    }
+
+    .ie-badge {
+      color: #ff0;
+      animation: blink 1.1s step-end infinite;
+      white-space: nowrap;
+    }
+
+    .counter {
+      color: #0f0;
+      font-size: 1.3rem;
+      text-shadow: 0 0 8px #0f0;
+    }
+
+    .main-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      position: relative;
+    }
+
+    .portal {
+      position: relative;
+      width: min(720px, 96vw);
+      padding: 20px 24px 16px;
+      background:
+        url("data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='10' height='10' fill='%23111'/%3E%3Crect x='10' y='10' width='10' height='10' fill='%23111'/%3E%3Crect x='10' width='10' height='10' fill='%230a0a0a'/%3E%3Crect y='10' width='10' height='10' fill='%230a0a0a'/%3E%3C/svg%3E");
+      border: 6px double #ff00ff;
+      box-shadow:
+        0 0 0 3px #00ffff,
+        0 0 60px rgba(255, 0, 255, 0.5),
+        inset 0 0 40px rgba(0, 255, 255, 0.15);
+      animation: portal-glow 3s ease-in-out infinite;
+    }
+
+    @keyframes portal-glow {
+      0%, 100% { box-shadow: 0 0 0 3px #0ff, 0 0 50px rgba(255, 0, 255, 0.4), inset 0 0 30px rgba(0, 255, 255, 0.1); }
+      50% { box-shadow: 0 0 0 3px #ff0, 0 0 80px rgba(0, 255, 255, 0.6), inset 0 0 50px rgba(255, 0, 255, 0.2); }
+    }
+
+    .orbit-ring {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      width: 340px;
+      height: 340px;
+      margin: -170px 0 0 -170px;
+      border: 2px dashed rgba(255, 255, 0, 0.35);
+      border-radius: 50%;
+      animation: spin 18s linear infinite;
+      pointer-events: none;
+    }
+
+    .orbit-item {
+      position: absolute;
+      left: 50%;
+      top: -14px;
+      font-size: 1.75rem;
+      transform: translateX(-50%);
+    }
+
+    .orbit-ring.reverse { width: 260px; height: 260px; margin: -130px 0 0 -130px; animation-duration: 12s; animation-direction: reverse; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .logo-block {
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .logo {
+      font-family: "Press Start 2P", monospace;
+      font-size: clamp(28px, 7vw, 52px);
+      line-height: 1.3;
+      background: linear-gradient(
+        90deg,
+        #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000
+      );
+      background-size: 400% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: rainbow 4s linear infinite, logo-bob 2s ease-in-out infinite;
+      filter: drop-shadow(0 0 12px rgba(255, 0, 255, 0.8));
+    }
+
+    .logo-sub {
+      font-size: clamp(1.25rem, 3.5vw, 2rem);
+      color: #f0f;
+      margin-top: 8px;
+      letter-spacing: 0.2em;
+      text-shadow: 2px 2px #000, 0 0 20px #f0f;
+    }
+
+    .tagline {
+      margin-top: 14px;
+      font-size: clamp(1.1rem, 2.8vw, 1.6rem);
+      color: #0ff;
+    }
+
+    .tagline .hot {
+      color: #ff0;
+      animation: blink 0.7s step-end infinite;
+    }
+
+    @keyframes rainbow { to { background-position: 400% 0; } }
+    @keyframes logo-bob {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-6px) scale(1.02); }
+    }
+
+    .mascot-row {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 16px;
+      font-size: 2.5rem;
+    }
+
+    .mascot-row span {
+      display: inline-block;
+      animation: bounce-mascot 0.6s ease-in-out infinite;
+    }
+
+    .mascot-row span:nth-child(2) { animation-delay: 0.1s; }
+    .mascot-row span:nth-child(3) { animation-delay: 0.2s; }
+    .mascot-row span:nth-child(4) { animation-delay: 0.3s; }
+    .mascot-row span:nth-child(5) { animation-delay: 0.4s; }
+
+    @keyframes bounce-mascot {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-18px) rotate(8deg); }
+    }
+
+    .nav-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .nav-btn {
+      font-family: "Press Start 2P", monospace;
+      font-size: clamp(8px, 2vw, 11px);
+      padding: 10px 14px;
+      border: 3px outset #aaa;
+      background: linear-gradient(180deg, #4444ff, #000088);
+      color: #fff;
+      text-decoration: none;
+      text-shadow: 1px 1px #000;
+      transition: transform 0.1s;
+    }
+
+    .nav-btn:hover {
+      background: linear-gradient(180deg, #ff44ff, #880088);
+      transform: scale(1.08);
+    }
+
+    .nav-btn:active { border-style: inset; }
+
+    #popup-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .word-popup {
+      position: fixed;
+      transform: translate(-50%, -50%) scale(0.2);
+      font-family: "Press Start 2P", monospace;
+      font-size: clamp(18px, 4.5vw, 36px);
+      padding: 14px 22px;
+      border: 4px ridge #fff;
+      background: linear-gradient(180deg, #ff00ff, #660066);
+      color: #ffff00;
+      text-shadow:
+        3px 3px #000,
+        0 0 20px #fff;
+      white-space: nowrap;
+      animation: word-pop 1.4s ease-out forwards;
+      box-shadow: 0 0 30px rgba(255, 0, 255, 0.9);
+    }
+
+    .word-popup.tone-cyan { background: linear-gradient(180deg, #00ffff, #006666); color: #ff0; }
+    .word-popup.tone-green { background: linear-gradient(180deg, #00ff00, #006600); color: #fff; }
+    .word-popup.tone-orange { background: linear-gradient(180deg, #ff9900, #993300); color: #0ff; }
+    .word-popup.tone-blue { background: linear-gradient(180deg, #4444ff, #000088); color: #ff99ff; }
+
+    @keyframes word-pop {
+      0% {
+        transform: translate(-50%, -50%) scale(0.1) rotate(-12deg);
+        opacity: 0;
+      }
+      15% {
+        transform: translate(-50%, -50%) scale(1.25) rotate(4deg);
+        opacity: 1;
+      }
+      35% {
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      70% {
+        transform: translate(-50%, -58%) scale(1.05);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -120%) scale(0.6);
+        opacity: 0;
+      }
+    }
+
+    .mid-marquee {
+      overflow: hidden;
+      white-space: nowrap;
+      margin-top: 14px;
+      padding: 6px;
+      background: #000;
+      border: 2px inset #666;
+      color: #0f0;
+      font-size: 1.2rem;
+    }
+
+    .mid-marquee-inner {
+      display: inline-block;
+      padding-left: 100%;
+      animation: scroll-left 22s linear infinite;
+    }
+
+    @keyframes scroll-left {
+      to { transform: translateX(-100%); }
+    }
+
+    .bottom-bar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: linear-gradient(180deg, #333, #111);
+      border-top: 4px ridge #888;
+      font-size: 1.15rem;
+    }
+
+    .now-playing {
+      color: #ff99cc;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .construction {
+      text-align: center;
+      color: #ff0;
+      animation: blink 1.5s step-end infinite;
+    }
+
+    .guestbook {
+      text-align: right;
+      color: #0ff;
+    }
+
+    .footer-marquee {
+      background: #000080;
+      color: #fff;
+      padding: 5px 0;
+      border-top: 2px solid #0ff;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 1.25rem;
+    }
+
+    .footer-marquee-inner {
+      display: inline-block;
+      animation: scroll-left 35s linear infinite;
+    }
+
+    #sparks {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    .spark {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: spark-fade 0.7s ease-out forwards;
+    }
+
+    @keyframes spark-fade {
+      to { opacity: 0; transform: scale(0); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <canvas id="sparks" aria-hidden="true"></canvas>
+  <div id="popup-layer" aria-live="polite"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <div id="splash">
+    <div class="loader-wrap">
+      <div class="loader-title">★ ANIMAGENT LOADING MODULE ★</div>
+      <div class="loader-bar-outer">
+        <div class="loader-bar-inner" id="loader-bar"></div>
+      </div>
+      <p class="loader-text" id="loader-status">Initializing Flash Player 6.0...</p>
+    </div>
+    <button type="button" id="enter-btn" hidden>▶ CLICK TO ENTER ◀</button>
+  </div>
+
+  <div class="stage">
+    <header class="top-bar">
+      <span class="ie-badge">⚠ BEST VIEWED IN IE 6.0 @ 800×600 ⚠</span>
+      <span class="counter">VISITORS: <span id="visitor-count">000,042,069</span></span>
+      <span style="color:#f0f">RES: <span id="res-clock">---</span></span>
+    </header>
+
+    <main class="main-panel">
+      <div class="orbit-ring" aria-hidden="true"><span class="orbit-item">🎬</span></div>
+      <div class="orbit-ring reverse" aria-hidden="true"><span class="orbit-item">✨</span></div>
+
+      <article class="portal">
+        <div class="logo-block">
+          <h1 class="logo">ANIMAGENT</h1>
+          <p class="logo-sub">アニマジェント · ANIMATION AGENT</p>
+          <p class="tagline">
+            <span class="hot">★ EPIC ★</span> RETRO TOONS · MODEM SPEED · MAXIMUM <span class="hot">SWAG</span>
+          </p>
+          <div class="mascot-row" aria-hidden="true">
+            <span>👾</span><span>🔥</span><span>💿</span><span>🌀</span><span>📼</span>
+          </div>
+          <nav class="nav-row">
+            <a class="nav-btn" href="#" data-pop="LEGENDARY!" data-tone="tone-orange" onclick="return popWord(event)">PORTFOLIO</a>
+            <a class="nav-btn" href="#" data-pop="BONKERS!" data-tone="tone-green" onclick="return popWord(event)">TOON LAB</a>
+            <a class="nav-btn" href="#" data-pop="WAZZZUP!" data-tone="tone-cyan" onclick="return popWord(event)">GUESTBOOK</a>
+            <a class="nav-btn" href="#" data-pop="FREEBIE!" data-tone="tone-blue" onclick="return popWord(event)">DOWNLOADS</a>
+            <a class="nav-btn" href="#" data-pop="RADICAL!" data-tone="tone-orange" onclick="return popWord(event)">COOL LINKS</a>
+          </nav>
+          <div class="mid-marquee">
+            <span class="mid-marquee-inner">
+              ★ WELCOME 2 THE FUTURE OF YESTERDAY ★ NEW TOON EVERY FULL MOON ★ SIGN MY GUESTBOOK PLZ ★
+              UNDER CONSTRUCTION BUT ALREADY AWESOME ★ 56K FRIENDLY (NOT REALLY) ★
+            </span>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <div class="bottom-bar">
+      <div class="now-playing" id="now-playing">♫ NOW PLAYING: Darude — Sandstorm (128kbps MIDI remix)</div>
+      <div class="construction">🚧 ALWAYS UNDER CONSTRUCTION 🚧</div>
+      <div class="guestbook">📧 webmaster@animagent.net</div>
+    </div>
+
+    <div class="footer-marquee">
+      <span class="footer-marquee-inner">
+        ★★★ ANIMAGENT 2003–FOREVER ★★★ YOU ARE THE 42,069th WARRIOR OF PIXELS ★★★
+        DO NOT STEAL MY GIFs ★★★ MADE WITH MICROSOFT FRONTPAGE & PURE CHAOS ★★★
+        THIS SITE IS Y2K COMPLIANT TRUST ME ★★★
+      </span>
+    </div>
+  </div>
+
+  <script>
+    const splash = document.getElementById('splash');
+    const loaderBar = document.getElementById('loader-bar');
+    const loaderStatus = document.getElementById('loader-status');
+    const enterBtn = document.getElementById('enter-btn');
+
+    const loadLines = [
+      'Initializing Flash Player 6.0...',
+      'Downloading pixel shaders...',
+      'Warming up the guestbook...',
+      'Syncing with GeoCities...',
+      'Buffering maximum epic...',
+      'LOAD COMPLETE!!!',
+    ];
+
+    function runLoader() {
+      let p = 0;
+      let line = 0;
+      const tick = setInterval(() => {
+        p += 2 + Math.random() * 6;
+        if (p >= 100) {
+          p = 100;
+          clearInterval(tick);
+          loaderBar.style.width = '100%';
+          loaderStatus.textContent = loadLines[loadLines.length - 1];
+          enterBtn.hidden = false;
+          return;
+        }
+        loaderBar.style.width = p + '%';
+        if (p > line * (100 / loadLines.length)) {
+          line = Math.min(loadLines.length - 2, line + 1);
+          loaderStatus.textContent = loadLines[line];
+        }
+      }, 80);
+    }
+
+    enterBtn.addEventListener('click', () => {
+      splash.classList.add('hidden');
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [523, 659, 784, 1047].forEach((freq, i) => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'square';
+          o.frequency.value = freq;
+          g.gain.setValueAtTime(0.06, ctx.currentTime + i * 0.08);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.25);
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start(ctx.currentTime + i * 0.08);
+          o.stop(ctx.currentTime + i * 0.08 + 0.3);
+        });
+      } catch (_) {}
+    });
+
+    runLoader();
+
+    window.popWord = function (event) {
+      const btn = event.currentTarget;
+      const word = btn.dataset.pop || 'EPIC!';
+      const tone = btn.dataset.tone || '';
+      const layer = document.getElementById('popup-layer');
+      const el = document.createElement('div');
+      el.className = 'word-popup' + (tone ? ' ' + tone : '');
+      el.textContent = word;
+      const jitterX = (Math.random() - 0.5) * 40;
+      const jitterY = (Math.random() - 0.5) * 30;
+      el.style.left = (event.clientX + jitterX) + 'px';
+      el.style.top = (event.clientY + jitterY) + 'px';
+      layer.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+      try {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = 'square';
+        o.frequency.value = 440 + Math.random() * 220;
+        g.gain.setValueAtTime(0.05, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.12);
+        o.connect(g);
+        g.connect(ac.destination);
+        o.start();
+        o.stop(ac.currentTime + 0.12);
+      } catch (_) {}
+      return false;
+    };
+
+    const canvas = document.getElementById('starfield');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    let w, h;
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+      stars = Array.from({ length: 180 }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        z: Math.random() * 2 + 0.3,
+        hue: Math.random() * 60 + 180,
+      }));
+    }
+
+    const shootingStars = [];
+
+    function drawStars() {
+      ctx.fillStyle = 'rgba(0, 0, 8, 0.35)';
+      ctx.fillRect(0, 0, w, h);
+
+      for (const s of stars) {
+        s.y += s.z * 0.6;
+        if (s.y > h) { s.y = 0; s.x = Math.random() * w; }
+        ctx.fillStyle = `hsla(${s.hue}, 100%, 70%, ${0.3 + s.z * 0.35})`;
+        ctx.fillRect(s.x, s.y, s.z, s.z);
+      }
+
+      if (Math.random() < 0.02) {
+        shootingStars.push({
+          x: Math.random() * w,
+          y: Math.random() * h * 0.4,
+          len: 40 + Math.random() * 80,
+          life: 1,
+        });
+      }
+
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        const sh = shootingStars[i];
+        sh.life -= 0.04;
+        sh.x += 12;
+        sh.y += 4;
+        if (sh.life <= 0) { shootingStars.splice(i, 1); continue; }
+        ctx.strokeStyle = `rgba(255, 255, 200, ${sh.life})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(sh.x, sh.y);
+        ctx.lineTo(sh.x - sh.len, sh.y - sh.len * 0.3);
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(drawStars);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    drawStars();
+
+    const sparkCanvas = document.getElementById('sparks');
+    const sparkCtx = sparkCanvas.getContext('2d');
+    const particles = [];
+
+    function resizeSparks() {
+      sparkCanvas.width = window.innerWidth;
+      sparkCanvas.height = window.innerHeight;
+    }
+    resizeSparks();
+    window.addEventListener('resize', resizeSparks);
+
+    document.addEventListener('mousemove', (e) => {
+      if (Math.random() > 0.65) return;
+      particles.push({
+        x: e.clientX,
+        y: e.clientY,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        life: 1,
+        hue: Math.random() * 360,
+      });
+    });
+
+    function drawSparks() {
+      sparkCtx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.05;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        sparkCtx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${p.life})`;
+        sparkCtx.beginPath();
+        sparkCtx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        sparkCtx.fill();
+      }
+      requestAnimationFrame(drawSparks);
+    }
+    drawSparks();
+
+    const visitorEl = document.getElementById('visitor-count');
+    setInterval(() => {
+      const n = 42069 + Math.floor(Date.now() / 800) % 9999;
+      visitorEl.textContent = String(n).padStart(9, '0').replace(/(\d{3})(?=\d)/g, '$1,');
+    }, 400);
+
+    const resClock = document.getElementById('res-clock');
+    function updateRes() {
+      resClock.textContent = window.innerWidth + '×' + window.innerHeight;
+    }
+    updateRes();
+    window.addEventListener('resize', updateRes);
+
+    const tracks = [
+      '♫ NOW PLAYING: Darude — Sandstorm (128kbps MIDI remix)',
+      '♫ NOW PLAYING: Linkin Park — In The End (karaoke.wav)',
+      '♫ NOW PLAYING: System Sounds — chord.wav',
+      '♫ NOW PLAYING: Unregistered HyperCam 2 theme',
+    ];
+    let track_i = 0;
+    setInterval(() => {
+      track_i = (track_i + 1) % tracks.length;
+      document.getElementById('now-playing').textContent = tracks[track_i];
+    }, 8000);
+  </script>
+</body>
+</html>
